@@ -33,6 +33,19 @@ def get_files(file_dir):
 
     return image_list, label_list
 
+def get_test_file(file_dir):
+    test = []
+    # label_test = []
+    for file in os.listdir(file_dir):
+        test.append(file_dir + file)
+        # label_test.append(0)
+    temp = np.array([test])
+    temp = temp.transpose()
+    image_list=list(temp[:,0])
+    return image_list
+
+
+
 
 #%%
 
