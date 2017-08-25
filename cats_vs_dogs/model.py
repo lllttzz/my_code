@@ -141,6 +141,7 @@ def evaluation(logits, labels):
     that were predicted correctly.
   """
   with tf.variable_scope('accuracy') as scope:
+      # http://blog.csdn.net/wuguangbin1230/article/details/72820627
       correct = tf.nn.in_top_k(logits, labels, 1)
       correct = tf.cast(correct, tf.float16)
       accuracy = tf.reduce_mean(correct)
