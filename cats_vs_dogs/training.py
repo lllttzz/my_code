@@ -3,17 +3,19 @@ import numpy as np
 import tensorflow as tf
 import input_data
 import model
+import csv
 
 N_CLASSES = 2 # 分两类
 IMG_W = 208  # resize the image, if the input image is too large, training will be very slow.
 IMG_H = 208
-BATCH_SIZE = 16
+BATCH_SIZE = 128
 CAPACITY = 2000
-MAX_STEP = 15000 # with current parameters, it is suggested to use MAX_STEP>10k
+MAX_STEP = 20000 # with current parameters, it is suggested to use MAX_STEP>10k
 learning_rate = 0.0001 # with current parameters, it is suggested to use learning rate<0.0001
+# global_step = tf.Variable(0, name='global_step', trainable=False)
+# learning_rate = tf.train.exponential_decay(0.1,global_step,100,0.96,staircase=True)
 
 def run_training():
-
     train_dir = './train/' # 加载数据训练
     logs_train_dir = './save_model/' # 储存训练好的位置
 
@@ -25,9 +27,9 @@ def run_training():
                                                           IMG_H,
                                                           BATCH_SIZE,
                                                           CAPACITY)
-    train_logits = model.inference(train_batch, BATCH_SIZE, N_CLASSES) # forward pass
+    train_logits = model.inference(train_batch, BATCH_SIZE, N_CLASSES,True) # forward pass
     train_loss = model.losses(train_logits, train_label_batch) # 设置损失函数
-    train_op = model.trainning(train_loss, learning_rate) # training
+    train_op = model.trainning(train_loss,learning_rate=) # training
     train__acc = model.evaluation(train_logits, train_label_batch) # 验证正确率
 
     summary_op = tf.summary.merge_all() # 定义合并变量操作，一次性生成所有摘要数据
@@ -38,6 +40,10 @@ def run_training():
     sess.run(tf.global_variables_initializer()) # 所有变量初始化
     coord = tf.train.Coordinator() # 多线程
     threads = tf.train.start_queue_runners(sess=sess, coord=coord)
+
+    csvfile = open('csv.csv', 'w', newline='')
+    writer = csv.writer(csvfile)
+    writer.writerow(['name','label'])
 
     try:
         for step in np.arange(MAX_STEP):

@@ -1,7 +1,8 @@
 import tensorflow as tf
 
-def inference(images, batch_size, n_classes):
-    '''Build the model
+def inference(images, batch_size, n_classes,train):
+    '''
+    Build the model
     Args:
         images: image batch, 4D tensor, tf.float32, [batch_size, width, height, channels]
     Returns:
@@ -10,7 +11,7 @@ def inference(images, batch_size, n_classes):
     #conv1, shape = [kernel size, kernel size, channels, kernel numbers]
     with tf.variable_scope('conv1') as scope: # variable_scope是给get_variable()创建的变量的名字加前缀
         weights = tf.get_variable('weights',
-                                  shape = [3,3,3, 16],
+                                  shape = [5,5,3, 16],
                                   dtype = tf.float32,
                                   initializer=tf.truncated_normal_initializer(stddev=0.1,dtype=tf.float32))
         biases = tf.get_variable('biases',
@@ -26,7 +27,7 @@ def inference(images, batch_size, n_classes):
 
     #pool1 and norm1
     with tf.variable_scope('pooling1_lrn') as scope:
-        pool1 = tf.nn.max_pool(conv1, ksize=[1,3,3,1],strides=[1,2,2,1],
+        pool1 = tf.nn.max_pool(conv1, ksize=[1,2,2,1],strides=[1,2,2,1],
                                padding='SAME', name='pooling1')
                 # tf.nn.local_response_normalization 把输出归一化
         norm1 = tf.nn.lrn(pool1, depth_radius=4, bias=1.0, alpha=0.001/9.0,
@@ -68,6 +69,8 @@ def inference(images, batch_size, n_classes):
                                  dtype=tf.float32,
                                  initializer=tf.constant_initializer(0.1))
         local3 = tf.nn.relu(tf.matmul(reshape, weights) + biases, name=scope.name)
+        if train:
+            local3 = tf.nn.dropout(local3,0.5)
 
     #local4
     with tf.variable_scope('local4') as scope:
@@ -80,6 +83,7 @@ def inference(images, batch_size, n_classes):
                                  dtype=tf.float32,
                                  initializer=tf.constant_initializer(0.1))
         local4 = tf.nn.relu(tf.matmul(local3, weights) + biases, name='local4')
+
 
 
     # softmax
@@ -113,7 +117,7 @@ def losses(logits, labels):
         tf.summary.scalar(scope.name+'/loss', loss)
     return loss
 #%%
-def trainning(loss, learning_rate):
+def trainning(loss,learning_rate):
     '''Training ops, the Op returned by this function is what must be passed to
         'sess.run()' call to cause the model to train.
 
@@ -124,8 +128,8 @@ def trainning(loss, learning_rate):
         train_op: The op for trainning
     '''
     with tf.name_scope('optimizer'):
-        optimizer = tf.train.AdamOptimizer(learning_rate= learning_rate)
         global_step = tf.Variable(0, name='global_step', trainable=False)
+        optimizer = tf.train.AdamOptimizer(learning_rate= learning_rate)
         train_op = optimizer.minimize(loss, global_step= global_step)
     return train_op
 
